@@ -41,28 +41,28 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 Write-Host "=== Remediation: WN11-CC-000210 - Enable SmartScreen for Explorer ==="
 
-# Policy-based registry configuration for Explorer SmartScreen
 $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
-$regName = "EnableSmartScreen"
-$desiredValue = 1
 
 try {
-    # Ensure registry path exists
     New-Item -Path $regPath -Force | Out-Null
 
-    # Set policy value
-    New-ItemProperty -Path $regPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    # Enable SmartScreen
+    New-ItemProperty -Path $regPath -Name "EnableSmartScreen" -PropertyType DWord -Value 1 -Force | Out-Null
 
-    # Verify configuration
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Configured $regPath\$regName = $currentValue"
+    # Set SmartScreen enforcement level to "Warn and prevent bypass"
+    New-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel" -PropertyType String -Value "Block" -Force | Out-Null
 
-    if ($currentValue -eq $desiredValue) {
-        Write-Host "SUCCESS: Microsoft Defender SmartScreen for Explorer is enabled."
-        Write-Host "NOTE: A reboot or sign-out/in may be required for audit validation."
+    $enabled = (Get-ItemProperty -Path $regPath -Name "EnableSmartScreen").EnableSmartScreen
+    $level   = (Get-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel").ShellSmartScreenLevel
+
+    Write-Host "EnableSmartScreen      = $enabled"
+    Write-Host "ShellSmartScreenLevel  = $level"
+
+    if ($enabled -eq 1 -and $level -eq "Block") {
+        Write-Host "SUCCESS: SmartScreen for Explorer is enabled with 'Warn and prevent bypass'."
         exit 0
     } else {
-        Write-Error "FAILURE: Registry value does not match the expected configuration."
+        Write-Error "FAILURE: SmartScreen configuration does not match required settings."
         exit 2
     }
 }
