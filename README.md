@@ -1,14 +1,73 @@
 # Windows 11 STIG Remediations
 
-This repository contains PowerShell-based implementations of DISA STIG controls for Windows 11 systems.
-Each STIG is documented, remediated, and validated using Tenable compliance auditing.
+This repository contains Windows 11 DISA STIG remediations implemented with PowerShell.  
+Each STIG is organized into its own folder and includes:
 
-## Repository Structure
-Each folder in this repository represents a single STIG and contains:
-- A remediation script
-- A verification script
-- Evidence screenshots
-- STIG-specific documentation
+- `README.md` (STIG summary + references)
+- `remediation.ps1` (implements the control)
+- `verification.ps1` (validates the control)
 
-## Implemented STIGs
-- WN11-00-000155 – Disable PowerShell 2.0
+> **Note:** Settings are implemented using policy-based registry configuration or local security policy changes.  
+> Validation is performed through Tenable compliance auditing and local verification scripts.
+
+---
+
+## STIG Index
+
+### Completed (Initial Set)
+1. **WN11-00-000155** – Disable PowerShell 2.0  
+   - Folder: [`WN11-00-000155-disable-powershell-v2/`](./WN11-00-000155-disable-powershell-v2/)
+
+2. **WN11-00-000125** – Disable Windows Copilot
+   - Folder: [`WN11-00-000125-disable-windows-copilot/`](./WN11-00-000125-disable-windows-copilot/)
+
+3. **WN11-00-000090** – Require password expiration 
+   - Folder: [`WN11-00-000090-require-password-expiration/`](./WN11-00-000090-require-password-expiration/)
+
+4. **WN11-00-000045** – Enable Windows Defender Firewall  
+   - Folder: [`WN11-00-000045-enable-windows-firewall/`](./WN11-00-000045-enable-windows-firewall/)
+
+5. **WN11-00-000070** – Enable Microsoft Defender SmartScreen  
+   - Folder: [`WN11-00-000070-enable-smartscreen/`](./WN11-00-000070-enable-smartscreen/)
+
+6. **WN11-AC-000035** – Enforce Minimum Password Length (≥14)  
+   - Folder: [`WN11-AC-000035-minimum-password-length/`](./WN11-AC-000035-minimum-password-length/)
+
+7. **WN11-AC-000005** – Account Lockout Duration (≥15 minutes)  
+   - Folder: [`WN11-AC-000005-account-lockout-duration/`](./WN11-AC-000005-account-lockout-duration/)
+
+8. **WN11-AC-000010** – Account Lockout Threshold (≤10 attempts)  
+   - Folder: [`WN11-AC-000010-account-lockout-threshold/`](./WN11-AC-000010-account-lockout-threshold/)
+
+9. **WN11-CC-000039** – Remove “Run as different user” from context menus  
+   - Folder: [`WN11-CC-000039-remove-run-as-different-user/`](./WN11-CC-000039-remove-run-as-different-user/)
+
+10. **WN11-CC-000210** – Enable Microsoft Defender SmartScreen for Explorer  
+   - Folder: [`WN11-CC-000210-enable-smartscreen-for-explorer/`](./WN11-CC-000210-enable-smartscreen-for-explorer/)
+
+---
+
+### Additional STIGs (Extended Set)
+11. **WN11-SO-000280** – Minimum Password Age (≥1 day)  
+   - Folder: [`WN11-SO-000280-minimum-password-age/`](./WN11-SO-000280-minimum-password-age/)
+
+12. **WN11-00-000135** – Require BitLocker on Removable Data Drives (policy enforcement)  
+   - Folder: [`WN11-00-000135-bitlocker-removable-drives/`](./WN11-00-000135-bitlocker-removable-drives/)
+
+13. **WN11-00-000170** – Disable AutoPlay/AutoRun  
+   - Folder: [`WN11-00-000170-disable-autoplay/`](./WN11-00-000170-disable-autoplay/)
+
+14. **WN11-CC-000315** – Disable “Always install with elevated privileges”  
+   - Folder: [`WN11-CC-000315-disable-always-install-elevated/`](./WN11-CC-000315-disable-always-install-elevated/)
+
+---
+
+## How to Use
+
+### Remediate
+1. Run PowerShell as Administrator.
+2. Navigate to a STIG folder.
+3. Run:
+   ```powershell
+   .\remediation.ps1
+
