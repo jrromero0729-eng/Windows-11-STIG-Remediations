@@ -1,8 +1,7 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-AC-000005 (V-253297) requires the account lockout duration
-    to be set to 15 minutes or greater.
-    This remediation enforces the local account lockout duration policy.
+    DISA STIG WN11-AC-000005 requires the Windows 11 account lockout duration to be configured to 15 minutes or greater.
+    This remediation configures the local Account Lockout Policy "Account lockout duration" to 15 minutes.
 
 .NOTES
     Author          : Albert Romero
@@ -40,28 +39,29 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-AC-000005 - Account Lockout Duration ==="
-
-# DISA STIG required duration (minutes)
-$requiredDuration = 15
+Write-Host "=== Remediation: WN11-AC-000005 - Account Lockout Duration (>= 15 minutes) ==="
 
 try {
-    Write-Host "Setting account lockout duration to $requiredDuration minutes..."
+    $desiredMinutes = 15
 
-    cmd /c "net accounts /lockoutduration:$requiredDuration" | Out-Null
+    # Configure account lockout duration
+    Write-Host "Setting account lockout duration to $desiredMinutes minutes..."
+    $null = net accounts /lockoutduration:$desiredMinutes
 
-    # Post-check
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Lockout duration" -SimpleMatch
+    # Post-check using net accounts output
+    $output = net accounts
+    $line = $output | Select-String -Pattern "Lockout duration" -ErrorAction Stop
 
-    Write-Host "Current policy:"
-    Write-Host $policyLine
+    # Extract the first number from the line (minutes)
+    $minutes = [int]([regex]::Match($line.Line, "\d+").Value)
 
-    if ($policyLine -and ($policyLine.ToString() -match "\b$requiredDuration\b")) {
-        Write-Host "SUCCESS: Account lockout duration is set to $requiredDuration minutes."
+    Write-Host "Current lockout duration (minutes): $minutes"
+
+    if ($minutes -ge 15 -or $minutes -eq 0) {
+        Write-Host "SUCCESS: Account lockout duration meets STIG requirements (>=15 or =0)."
         exit 0
     } else {
-        Write-Error "FAILURE: Unable to confirm account lockout duration configuration."
+        Write-Error "FAILURE: Account lockout duration does not meet STIG requirements."
         exit 2
     }
 }
