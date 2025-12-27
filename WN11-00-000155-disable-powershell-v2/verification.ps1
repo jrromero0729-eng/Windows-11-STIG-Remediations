@@ -1,7 +1,9 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-00-000155.
-    Confirms the Windows PowerShell 2.0 optional feature is disabled (no changes are made).
+    DISA STIG WN11-00-000155 requires the Windows PowerShell 2.0 feature to be disabled on the system.
+    This verification checks that both optional features associated with PowerShell 2.0 are disabled:
+    - MicrosoftWindowsPowerShellV2Root
+    - MicrosoftWindowsPowerShellV2
 
 .NOTES
     Author          : Albert Romero
@@ -18,36 +20,44 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Save the script as: Verify-WN11-00-000155.ps1 (or keep as verification.ps1 in your repo)
-    2. Right-click PowerShell and choose **Run as Administrator** (recommended for consistent results).
-    3. Navigate to the script's folder:
-         cd C:\path\to\script
-    4. Run the script:
-         .\Verify-WN11-00-000155.ps1
+    1. Run PowerShell (Administrator recommended).
+    2. Navigate to the script's folder:
+         cd C:\path\to\WN11-00-000155-disable-powershell-v2
+    3. Run the script:
+         .\verification.ps1
 
     Example syntax:
-        PS C:\> .\Verify-WN11-00-000155.ps1
+        PS C:\> .\verification.ps1
 #>
 
 # -------------------------
 # Main Script
 # -------------------------
 
-$featureName = "MicrosoftWindowsPowerShellV2"
-
-Write-Host "=== Verification: WN11-00-000155 - PowerShell 2.0 Disabled ==="
-Write-Host "Checking feature state: $featureName"
+Write-Host "=== Verification: WN11-00-000155 - Disable Windows PowerShell 2.0 ==="
 
 try {
-    $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName -ErrorAction Stop
-    Write-Host "State: $($feature.State)"
+    $features = @(
+        "MicrosoftWindowsPowerShellV2Root",
+        "MicrosoftWindowsPowerShellV2"
+    )
 
-    if ($feature.State -eq "Disabled") {
-        Write-Host "PASS: PowerShell 2.0 feature is disabled."
+    $results = foreach ($f in $features) {
+        Get-WindowsOptionalFeature -Online -FeatureName $f -ErrorAction Stop |
+            Select-Object FeatureName, State
+    }
+
+    Write-Host "Current feature states:"
+    $results | Format-Table -AutoSize
+
+    $nonCompliant = $results | Where-Object { $_.State -ne "Disabled" }
+
+    if (-not $nonCompliant) {
+        Write-Host "PASS: PowerShell 2.0 optional features are disabled."
         exit 0
     } else {
-        Write-Host "FAIL: PowerShell 2.0 feature is NOT disabled."
-        Write-Host "Recommended fix: Run the remediation script to disable the feature."
+        Write-Host "FAIL: One or more PowerShell 2.0 optional features are not disabled:"
+        $nonCompliant | Format-Table -AutoSize
         exit 1
     }
 }
