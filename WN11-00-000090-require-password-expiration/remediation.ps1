@@ -42,40 +42,47 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Write-Host "=== Remediation: WN11-00-000090 - Require Password Expiration (Local Accounts) ==="
 
 try {
-    # Get local users and exclude built-in/system accounts that may not be applicable
-    $excluded = @("Administrator", "Guest", "DefaultAccount", "WDAGUtilityAccount")
-    $users = Get-LocalUser | Where-Object { $excluded -notcontains $_.Name }
+    # Exclude only built-in/system accounts that are typically not applicable
+    # NOTE: Administrator is intentionally NOT excluded for best chance of first-pass Tenable compliance.
+    $excluded = @("Guest", "DefaultAccount", "WDAGUtilityAccount")
+
+    # Get enabled local users (active accounts) excluding the above
+    $users = Get-LocalUser -ErrorAction Stop | Where-Object {
+        $_.Enabled -eq $true -and ($excluded -notcontains $_.Name)
+    }
 
     if (-not $users) {
-        Write-Host "No local user accounts found to remediate (excluding built-ins)."
+        Write-Host "No enabled local user accounts found to remediate (excluding system accounts)."
         exit 0
     }
+
+    Write-Host "Accounts evaluated (enabled only):"
+    $users | Select-Object Name, Enabled, PasswordNeverExpires | Format-Table -AutoSize
 
     $changed = 0
 
     foreach ($u in $users) {
-        # Only remediate enabled accounts (optional - safer)
-        if ($u.Enabled -eq $true -and $u.PasswordNeverExpires -eq $true) {
+        if ($u.PasswordNeverExpires -eq $true) {
             Write-Host "Updating user '$($u.Name)': setting PasswordNeverExpires = False"
-            Set-LocalUser -Name $u.Name -PasswordNeverExpires $false
+            Set-LocalUser -Name $u.Name -PasswordNeverExpires $false -ErrorAction Stop
             $changed++
         } else {
-            Write-Host "User '$($u.Name)' already compliant or not applicable."
+            Write-Host "User '$($u.Name)' is already compliant."
         }
     }
 
-    # Post-check
-    $nonCompliant = Get-LocalUser |
-        Where-Object { $excluded -notcontains $_.Name } |
-        Where-Object { $_.Enabled -eq $true -and $_.PasswordNeverExpires -eq $true }
+    # Post-check (ensure no enabled accounts remain noncompliant)
+    $nonCompliant = Get-LocalUser -ErrorAction Stop | Where-Object {
+        $_.Enabled -eq $true -and ($excluded -notcontains $_.Name) -and $_.PasswordNeverExpires -eq $true
+    }
 
     if ($nonCompliant) {
-        Write-Error "FAILURE: Some local accounts still have PasswordNeverExpires enabled:"
+        Write-Error "FAILURE: Some enabled local accounts still have PasswordNeverExpires enabled:"
         $nonCompliant | Select-Object Name, Enabled, PasswordNeverExpires | Format-Table -AutoSize
         exit 2
     }
 
-    Write-Host "SUCCESS: Local accounts are configured to require password expiration."
+    Write-Host "SUCCESS: All enabled local accounts are configured to require password expiration."
     Write-Host "Accounts updated: $changed"
     exit 0
 }
