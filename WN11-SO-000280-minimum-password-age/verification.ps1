@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-SO-000280.
-    Confirms the minimum password age meets or exceeds 1 day.
+    Verifies DISA STIG WN11-SO-000280 compliance by confirming Windows LAPS
+    is enabled and configured to rotate the local Administrator password
+    at least every 60 days.
 
 .NOTES
     Author          : Albert Romero
@@ -18,9 +19,9 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Run PowerShell (Administrator recommended).
+    1. Run PowerShell.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-SO-000280-minimum-password-age
+         cd C:\path\to\WN11-SO-000280-enable-laps
     3. Run the script:
          .\verification.ps1
 
@@ -32,29 +33,32 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-SO-000280 - Minimum Password Age ==="
-
-$expectedMinAgeDays = 1
+Write-Host "=== Verification: WN11-SO-000280 - Windows LAPS Password Rotation ==="
 
 try {
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Minimum password age" -SimpleMatch
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LAPS"
 
-    if (-not $policyLine) {
-        Write-Host "FAIL: Could not locate minimum password age policy."
+    if (-not (Test-Path $regPath)) {
+        Write-Host "FAIL: LAPS policy registry path not found."
         exit 1
     }
 
-    Write-Host "Current policy:"
-    Write-Host $policyLine
+    $config = Get-ItemProperty -Path $regPath
 
-    $currentValue = [int](([string]$policyLine).Split(':')[-1].Trim())
+    $enabled     = $config.BackupDirectory -eq 1
+    $ageValid    = $config.PasswordAgeDays -le 60
+    $adminTarget = $config.AdministratorAccountName -eq "Administrator"
 
-    if ($currentValue -ge $expectedMinAgeDays) {
-        Write-Host "PASS: Minimum password age is $currentValue day(s) (meets/exceeds $expectedMinAgeDays)."
+    Write-Host "BackupDirectory          = $($config.BackupDirectory)"
+    Write-Host "PasswordAgeDays          = $($config.PasswordAgeDays)"
+    Write-Host "AdministratorAccountName = $($config.AdministratorAccountName)"
+
+    if ($enabled -and $ageValid -and $adminTarget) {
+        Write-Host "PASS: Windows LAPS is correctly configured for Administrator password rotation."
         exit 0
-    } else {
-        Write-Host "FAIL: Minimum password age is $currentValue day(s) (expected >= $expectedMinAgeDays)."
+    }
+    else {
+        Write-Host "FAIL: One or more LAPS settings do not meet STIG requirements."
         exit 1
     }
 }
