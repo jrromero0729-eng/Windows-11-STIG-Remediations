@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-CC-000210.
-    Confirms Microsoft Defender SmartScreen for Explorer is enabled via policy configuration.
+    DISA STIG WN11-CC-000210 requires Microsoft Defender SmartScreen for Explorer to be enabled
+    with 'Warn and prevent bypass' configured.
 
 .NOTES
     Author          : Albert Romero
@@ -18,7 +18,7 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Run PowerShell (Administrator recommended).
+    1. Run PowerShell.
     2. Navigate to the script's folder:
          cd C:\path\to\WN11-CC-000210-enable-smartscreen-for-explorer
     3. Run the script:
@@ -32,27 +32,31 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-CC-000210 - SmartScreen for Explorer ==="
-
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+Write-Host "=== Verification: WN11-CC-000210 - Microsoft Defender SmartScreen for Explorer ==="
 
 try {
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+
+    $expectedEnable = 1
+    $expectedLevel  = "Block"
+
     if (-not (Test-Path $regPath)) {
-        Write-Host "FAIL: Registry path not found."
+        Write-Host "FAIL: Registry path not found: $regPath"
         exit 1
     }
 
-    $enabled = (Get-ItemProperty -Path $regPath -Name "EnableSmartScreen").EnableSmartScreen
-    $level   = (Get-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel").ShellSmartScreenLevel
+    $currentEnable = (Get-ItemProperty -Path $regPath -Name "EnableSmartScreen").EnableSmartScreen
+    $currentLevel  = (Get-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel").ShellSmartScreenLevel
 
-    Write-Host "EnableSmartScreen      = $enabled"
-    Write-Host "ShellSmartScreenLevel  = $level"
+    Write-Host "EnableSmartScreen       = $currentEnable (Expected: 1)"
+    Write-Host "ShellSmartScreenLevel   = $currentLevel (Expected: Block)"
 
-    if ($enabled -eq 1 -and $level -eq "Block") {
-        Write-Host "PASS: SmartScreen for Explorer is enabled with 'Warn and prevent bypass'."
+    if ($currentEnable -eq $expectedEnable -and $currentLevel -eq $expectedLevel) {
+        Write-Host "PASS: SmartScreen for Explorer is correctly configured."
         exit 0
-    } else {
-        Write-Host "FAIL: SmartScreen for Explorer is not correctly configured."
+    }
+    else {
+        Write-Host "FAIL: SmartScreen configuration does not meet STIG requirements."
         exit 1
     }
 }
