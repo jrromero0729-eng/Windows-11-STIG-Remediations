@@ -32,26 +32,27 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-CC-000210 - SmartScreen for Explorer Enabled ==="
+Write-Host "=== Verification: WN11-CC-000210 - SmartScreen for Explorer ==="
 
 $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
-$regName = "EnableSmartScreen"
-$expectedValue = 1
 
 try {
     if (-not (Test-Path $regPath)) {
-        Write-Host "FAIL: Registry path not found: $regPath"
+        Write-Host "FAIL: Registry path not found."
         exit 1
     }
 
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Found $regName = $currentValue"
+    $enabled = (Get-ItemProperty -Path $regPath -Name "EnableSmartScreen").EnableSmartScreen
+    $level   = (Get-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel").ShellSmartScreenLevel
 
-    if ($currentValue -eq $expectedValue) {
-        Write-Host "PASS: Microsoft Defender SmartScreen for Explorer is enabled."
+    Write-Host "EnableSmartScreen      = $enabled"
+    Write-Host "ShellSmartScreenLevel  = $level"
+
+    if ($enabled -eq 1 -and $level -eq "Block") {
+        Write-Host "PASS: SmartScreen for Explorer is enabled with 'Warn and prevent bypass'."
         exit 0
     } else {
-        Write-Host "FAIL: Expected $regName = $expectedValue but found $currentValue"
+        Write-Host "FAIL: SmartScreen for Explorer is not correctly configured."
         exit 1
     }
 }
