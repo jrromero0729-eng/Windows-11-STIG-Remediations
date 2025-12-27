@@ -1,7 +1,9 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-00-000155 requires the Windows PowerShell 2.0 optional feature to be disabled.
-    PowerShell 2.0 is deprecated and lacks modern security protections, increasing risk of abuse.
+    DISA STIG WN11-00-000155 requires the Windows PowerShell 2.0 feature to be disabled on the system.
+    This remediation disables both optional features associated with PowerShell 2.0:
+    - MicrosoftWindowsPowerShellV2Root
+    - MicrosoftWindowsPowerShellV2
 
 .NOTES
     Author          : Albert Romero
@@ -18,15 +20,14 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Save the script as: Remediate-WN11-00-000155.ps1 (or keep as remediation.ps1 in your repo)
-    2. Right-click PowerShell and choose **Run as Administrator**.
-    3. Navigate to the script's folder:
-         cd C:\path\to\script
-    4. Run the script:
-         .\Remediate-WN11-00-000155.ps1
+    1. Run PowerShell as Administrator.
+    2. Navigate to the script's folder:
+         cd C:\path\to\WN11-00-000155-disable-powershell-v2
+    3. Run the script:
+         .\remediation.ps1
 
     Example syntax:
-        PS C:\> .\Remediate-WN11-00-000155.ps1
+        PS C:\> .\remediation.ps1
 #>
 
 # -------------------------
@@ -40,33 +41,37 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-$featureName = "MicrosoftWindowsPowerShellV2"
-
-Write-Host "=== Remediation: WN11-00-000155 - Disable PowerShell 2.0 ==="
-Write-Host "Checking current feature state: $featureName"
+Write-Host "=== Remediation: WN11-00-000155 - Disable Windows PowerShell 2.0 ==="
 
 try {
-    $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName -ErrorAction Stop
-    Write-Host "Current State: $($feature.State)"
+    $features = @(
+        "MicrosoftWindowsPowerShellV2Root",
+        "MicrosoftWindowsPowerShellV2"
+    )
 
-    if ($feature.State -eq "Disabled") {
-        Write-Host "No action required. PowerShell 2.0 is already disabled."
-        exit 0
+    foreach ($f in $features) {
+        Write-Host "Disabling optional feature: $f"
+        Disable-WindowsOptionalFeature -Online -FeatureName $f -NoRestart -ErrorAction Stop | Out-Null
     }
 
-    Write-Host "Disabling PowerShell 2.0 feature..."
-    Disable-WindowsOptionalFeature -Online -FeatureName $featureName -NoRestart -ErrorAction Stop | Out-Null
+    # Verify state after remediation
+    $results = foreach ($f in $features) {
+        Get-WindowsOptionalFeature -Online -FeatureName $f -ErrorAction Stop |
+            Select-Object FeatureName, State
+    }
 
-    # Re-check state
-    $featureAfter = Get-WindowsOptionalFeature -Online -FeatureName $featureName -ErrorAction Stop
-    Write-Host "New State: $($featureAfter.State)"
+    Write-Host "Post-remediation feature states:"
+    $results | Format-Table -AutoSize
 
-    if ($featureAfter.State -eq "Disabled") {
-        Write-Host "SUCCESS: PowerShell 2.0 has been disabled."
-        Write-Host "NOTE: If Tenable still reports failure, reboot the system and re-scan."
+    $nonCompliant = $results | Where-Object { $_.State -ne "Disabled" }
+
+    if (-not $nonCompliant) {
+        Write-Host "SUCCESS: PowerShell 2.0 optional features are disabled."
+        Write-Host "NOTE: A reboot may be required for Tenable to validate the change."
         exit 0
     } else {
-        Write-Error "FAILURE: Feature state did not change to Disabled. Current: $($featureAfter.State)"
+        Write-Error "FAILURE: One or more PowerShell 2.0 features are not disabled:"
+        $nonCompliant | Format-Table -AutoSize
         exit 2
     }
 }
@@ -74,4 +79,3 @@ catch {
     Write-Error "An error occurred: $($_.Exception.Message)"
     exit 3
 }
-
