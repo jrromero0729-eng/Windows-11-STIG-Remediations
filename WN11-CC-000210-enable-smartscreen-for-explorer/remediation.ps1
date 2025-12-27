@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
     DISA STIG WN11-CC-000210 requires Microsoft Defender SmartScreen for Explorer to be enabled.
-    This remediation enforces SmartScreen for Explorer using policy-based registry settings.
+    This remediation enables SmartScreen and configures it to "Warn and prevent bypass"
+    using policy-based registry settings.
 
 .NOTES
     Author          : Albert Romero
@@ -39,30 +40,49 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-CC-000210 - Enable SmartScreen for Explorer ==="
-
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+Write-Host "=== Remediation: WN11-CC-000210 - Enable Microsoft Defender SmartScreen for Explorer ==="
 
 try {
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+
+    # Required policy values
+    $enableSmartScreenName = "EnableSmartScreen"
+    $enableSmartScreenValue = 1
+
+    $smartScreenLevelName = "ShellSmartScreenLevel"
+    $smartScreenLevelValue = "Block"   # Warn and prevent bypass
+
+    # Ensure registry path exists
     New-Item -Path $regPath -Force | Out-Null
 
-    # Enable SmartScreen
-    New-ItemProperty -Path $regPath -Name "EnableSmartScreen" -PropertyType DWord -Value 1 -Force | Out-Null
+    # Set EnableSmartScreen = 1
+    New-ItemProperty -Path $regPath `
+        -Name $enableSmartScreenName `
+        -PropertyType DWord `
+        -Value $enableSmartScreenValue `
+        -Force | Out-Null
 
-    # Set SmartScreen enforcement level to "Warn and prevent bypass"
-    New-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel" -PropertyType String -Value "Block" -Force | Out-Null
+    # Set ShellSmartScreenLevel = Block
+    New-ItemProperty -Path $regPath `
+        -Name $smartScreenLevelName `
+        -PropertyType String `
+        -Value $smartScreenLevelValue `
+        -Force | Out-Null
 
-    $enabled = (Get-ItemProperty -Path $regPath -Name "EnableSmartScreen").EnableSmartScreen
-    $level   = (Get-ItemProperty -Path $regPath -Name "ShellSmartScreenLevel").ShellSmartScreenLevel
+    # Verification
+    $currentEnable = (Get-ItemProperty -Path $regPath -Name $enableSmartScreenName).$enableSmartScreenName
+    $currentLevel  = (Get-ItemProperty -Path $regPath -Name $smartScreenLevelName).$smartScreenLevelName
 
-    Write-Host "EnableSmartScreen      = $enabled"
-    Write-Host "ShellSmartScreenLevel  = $level"
+    Write-Host "Configured $enableSmartScreenName = $currentEnable"
+    Write-Host "Configured $smartScreenLevelName = $currentLevel"
 
-    if ($enabled -eq 1 -and $level -eq "Block") {
-        Write-Host "SUCCESS: SmartScreen for Explorer is enabled with 'Warn and prevent bypass'."
+    if ($currentEnable -eq 1 -and $currentLevel -eq "Block") {
+        Write-Host "SUCCESS: Microsoft Defender SmartScreen for Explorer is enabled and enforced."
+        Write-Host "NOTE: A reboot or 'gpupdate /force' may be required for audit validation."
         exit 0
-    } else {
-        Write-Error "FAILURE: SmartScreen configuration does not match required settings."
+    }
+    else {
+        Write-Error "FAILURE: SmartScreen settings do not match required STIG configuration."
         exit 2
     }
 }
