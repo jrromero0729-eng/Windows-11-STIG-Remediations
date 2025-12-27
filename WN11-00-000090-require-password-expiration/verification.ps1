@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-00-000090.
-    Confirms local enabled user accounts do not have "Password never expires" enabled (no changes are made).
+    DISA STIG WN11-00-000090 requires accounts to be configured to require password expiration.
+    This verification checks that enabled local user accounts are not configured with "Password never expires".
 
 .NOTES
     Author          : Albert Romero
@@ -35,19 +35,32 @@
 Write-Host "=== Verification: WN11-00-000090 - Require Password Expiration (Local Accounts) ==="
 
 try {
-    $excluded = @("Administrator", "Guest", "DefaultAccount", "WDAGUtilityAccount")
+    # Exclude only built-in/system accounts that are typically not applicable
+    # NOTE: Administrator is intentionally NOT excluded for best chance of first-pass Tenable compliance.
+    $excluded = @("Guest", "DefaultAccount", "WDAGUtilityAccount")
 
-    $nonCompliant = Get-LocalUser |
-        Where-Object { $excluded -notcontains $_.Name } |
-        Where-Object { $_.Enabled -eq $true -and $_.PasswordNeverExpires -eq $true }
+    # Get enabled local users (active accounts) excluding the above
+    $users = Get-LocalUser -ErrorAction Stop | Where-Object {
+        $_.Enabled -eq $true -and ($excluded -notcontains $_.Name)
+    }
+
+    if (-not $users) {
+        Write-Host "PASS: No enabled local user accounts found to evaluate (excluding system accounts)."
+        exit 0
+    }
+
+    Write-Host "Accounts evaluated (enabled only):"
+    $users | Select-Object Name, Enabled, PasswordNeverExpires | Format-Table -AutoSize
+
+    $nonCompliant = $users | Where-Object { $_.PasswordNeverExpires -eq $true }
 
     if ($nonCompliant) {
-        Write-Host "FAIL: The following local accounts have PasswordNeverExpires enabled:"
+        Write-Host "FAIL: The following enabled local accounts have 'Password never expires' enabled:"
         $nonCompliant | Select-Object Name, Enabled, PasswordNeverExpires | Format-Table -AutoSize
         exit 1
     }
 
-    Write-Host "PASS: No enabled local accounts have PasswordNeverExpires enabled."
+    Write-Host "PASS: All enabled local accounts require password expiration."
     exit 0
 }
 catch {
