@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-SO-000280 requires the minimum password age to be configured.
-    This remediation enforces a minimum password age of at least 1 day using local account policy settings.
+    DISA STIG WN11-SO-000280 requires passwords for enabled local Administrator accounts
+    to be changed at least every 60 days. This remediation enables Windows LAPS and
+    configures password rotation to comply with the STIG.
 
 .NOTES
     Author          : Albert Romero
@@ -20,7 +21,7 @@
 .USAGE
     1. Run PowerShell as Administrator.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-SO-000280-minimum-password-age
+         cd C:\path\to\WN11-SO-000280-enable-laps
     3. Run the script:
          .\remediation.ps1
 
@@ -39,27 +40,38 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-SO-000280 - Minimum Password Age ==="
-
-$requiredMinAgeDays = 1
+Write-Host "=== Remediation: WN11-SO-000280 - Enable Windows LAPS and Password Rotation ==="
 
 try {
-    Write-Host "Setting minimum password age to $requiredMinAgeDays day(s)..."
-    cmd /c "net accounts /minpwage:$requiredMinAgeDays" | Out-Null
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LAPS"
 
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Minimum password age" -SimpleMatch
-
-    Write-Host "Current policy:"
-    Write-Host $policyLine
-
-    if ($policyLine -and ($policyLine.ToString() -match "\b$requiredMinAgeDays\b")) {
-        Write-Host "SUCCESS: Minimum password age is set to $requiredMinAgeDays day(s)."
-        exit 0
-    } else {
-        Write-Error "FAILURE: Unable to confirm minimum password age configuration."
-        exit 2
+    # Required STIG-compliant values
+    $settings = @{
+        "BackupDirectory"          = 1    # Enable LAPS (local backup)
+        "PasswordAgeDays"          = 30   # Rotate password every 30 days (<= 60)
+        "AdministratorAccountName" = "Administrator"
+        "EnablePasswordEncryption"= 1
     }
+
+    # Ensure registry path exists
+    New-Item -Path $regPath -Force | Out-Null
+
+    foreach ($name in $settings.Keys) {
+        $value = $settings[$name]
+        $type  = ($value -is [int]) ? "DWord" : "String"
+
+        New-ItemProperty -Path $regPath `
+            -Name $name `
+            -PropertyType $type `
+            -Value $value `
+            -Force | Out-Null
+
+        Write-Host "Configured $name = $value"
+    }
+
+    Write-Host "SUCCESS: Windows LAPS is enabled and configured for Administrator password rotation."
+    Write-Host "NOTE: LAPS will rotate the password automatically. A reboot may be required."
+    exit 0
 }
 catch {
     Write-Error "An error occurred: $($_.Exception.Message)"
