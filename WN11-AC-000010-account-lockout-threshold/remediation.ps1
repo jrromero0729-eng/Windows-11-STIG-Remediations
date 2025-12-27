@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-AC-000010 (V-253298) requires the account lockout threshold
-    to be set to 10 or fewer invalid logon attempts.
-    This remediation enforces the local account lockout threshold policy.
+    DISA STIG WN11-AC-000010 requires the number of allowed bad logon attempts
+    (Account lockout threshold) to be configured to three or less.
+    This remediation sets the Account lockout threshold to 3 invalid logon attempts.
 
 .NOTES
     Author          : Albert Romero
@@ -40,28 +40,28 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-AC-000010 - Account Lockout Threshold ==="
-
-# DISA STIG compliant threshold (10 or fewer)
-$requiredThreshold = 10
+Write-Host "=== Remediation: WN11-AC-000010 - Account Lockout Threshold (<= 3) ==="
 
 try {
-    Write-Host "Setting account lockout threshold to $requiredThreshold invalid attempts..."
+    $desiredThreshold = 3
 
-    cmd /c "net accounts /lockoutthreshold:$requiredThreshold" | Out-Null
+    Write-Host "Setting account lockout threshold to $desiredThreshold invalid logon attempts..."
+    $null = net accounts /lockoutthreshold:$desiredThreshold
 
     # Post-check
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Lockout threshold" -SimpleMatch
+    $output = net accounts
+    $line = $output | Select-String -Pattern "Lockout threshold" -ErrorAction Stop
 
-    Write-Host "Current policy:"
-    Write-Host $policyLine
+    $currentValue = [int]([regex]::Match($line.Line, "\d+").Value)
 
-    if ($policyLine -and ($policyLine.ToString() -match "\b$requiredThreshold\b")) {
-        Write-Host "SUCCESS: Account lockout threshold is set to $requiredThreshold attempts."
+    Write-Host "Current lockout threshold: $currentValue"
+    Write-Host "Expected: 1 to 3 (0 is NOT acceptable)"
+
+    if ($currentValue -ge 1 -and $currentValue -le 3) {
+        Write-Host "SUCCESS: Account lockout threshold meets STIG requirements."
         exit 0
     } else {
-        Write-Error "FAILURE: Unable to confirm account lockout threshold configuration."
+        Write-Error "FAILURE: Account lockout threshold does not meet STIG requirements."
         exit 2
     }
 }
