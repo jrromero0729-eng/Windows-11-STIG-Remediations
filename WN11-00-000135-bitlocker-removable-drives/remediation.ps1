@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-00-000135 requires BitLocker protection to be enforced for removable data drives.
-    This remediation configures policy to require encryption before granting write access to removable drives.
+    DISA STIG WN11-00-000135 requires a host-based firewall to be installed
+    and enabled on the system. This remediation ensures Windows Defender
+    Firewall is enabled for all network profiles.
 
 .NOTES
     Author          : Albert Romero
@@ -20,7 +21,7 @@
 .USAGE
     1. Run PowerShell as Administrator.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-00-000135-bitlocker-removable-drives
+         cd C:\path\to\WN11-00-000135-enable-firewall
     3. Run the script:
          .\remediation.ps1
 
@@ -39,29 +40,20 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-00-000135 - BitLocker Removable Data Drives Policy ==="
-
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\FVE"
-$regName = "RDVRequireEncryptionForWriteAccess"
-$desiredValue = 1
+Write-Host "=== Remediation: WN11-00-000135 - Enable Windows Defender Firewall ==="
 
 try {
-    New-Item -Path $regPath -Force | Out-Null
+    # Enable firewall for all profiles
+    $profiles = @("Domain", "Private", "Public")
 
-    # Require BitLocker encryption for removable drives before write access
-    New-ItemProperty -Path $regPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
-
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Configured $regPath\$regName = $currentValue"
-
-    if ($currentValue -eq $desiredValue) {
-        Write-Host "SUCCESS: Removable data drives require BitLocker encryption for write access."
-        Write-Host "NOTE: This enforces policy; existing removable drives may require encryption to comply."
-        exit 0
-    } else {
-        Write-Error "FAILURE: Registry value does not match the expected configuration."
-        exit 2
+    foreach ($profile in $profiles) {
+        Write-Host "Enabling Windows Defender Firewall for $profile profile..."
+        Set-NetFirewallProfile -Profile $profile -Enabled True
     }
+
+    Write-Host "SUCCESS: Windows Defender Firewall enabled for all profiles."
+    Write-Host "NOTE: Group Policy refresh or reboot may be required for audit validation."
+    exit 0
 }
 catch {
     Write-Error "An error occurred: $($_.Exception.Message)"
