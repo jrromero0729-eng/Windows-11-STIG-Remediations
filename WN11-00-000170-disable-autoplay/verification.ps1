@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-00-000170.
-    Confirms AutoPlay/AutoRun is disabled using the NoDriveTypeAutoRun policy value.
+    Verifies DISA STIG WN11-00-000170 compliance by confirming the SMBv1
+    client driver is disabled via registry configuration.
 
 .NOTES
     Author          : Albert Romero
@@ -18,9 +18,9 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Run PowerShell (Administrator recommended).
+    1. Run PowerShell.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-00-000170-disable-autoplay
+         cd C:\path\to\WN11-00-000170-disable-smbv1-client
     3. Run the script:
          .\verification.ps1
 
@@ -32,26 +32,28 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-00-000170 - Disable AutoPlay ==="
-
-$regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"
-$regName = "NoDriveTypeAutoRun"
-$expectedValue = 255
+Write-Host "=== Verification: WN11-00-000170 - SMBv1 Client Disabled ==="
 
 try {
+    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10"
+    $regName = "Start"
+    $expectedValue = 4
+
     if (-not (Test-Path $regPath)) {
-        Write-Host "FAIL: Registry path not found: $regPath"
+        Write-Host "FAIL: SMBv1 client driver registry path not found."
         exit 1
     }
 
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Found $regName = $currentValue"
+    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName).$regName
+    Write-Host "Found $regPath\$regName = $currentValue"
+    Write-Host "Expected value = $expectedValue (Disabled)"
 
     if ($currentValue -eq $expectedValue) {
-        Write-Host "PASS: AutoPlay/AutoRun is disabled (NoDriveTypeAutoRun=$expectedValue)."
+        Write-Host "PASS: SMBv1 client protocol is disabled."
         exit 0
-    } else {
-        Write-Host "FAIL: Expected $regName = $expectedValue but found $currentValue"
+    }
+    else {
+        Write-Host "FAIL: SMBv1 client protocol is not disabled."
         exit 1
     }
 }
