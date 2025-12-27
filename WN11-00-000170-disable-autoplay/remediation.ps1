@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-00-000170 requires AutoPlay to be disabled.
-    This remediation disables AutoPlay using policy-based registry settings.
+    DISA STIG WN11-00-000170 requires the SMBv1 protocol to be disabled
+    on the SMB client. This remediation disables the SMBv1 client
+    driver by configuring the required registry setting.
 
 .NOTES
     Author          : Albert Romero
@@ -20,7 +21,7 @@
 .USAGE
     1. Run PowerShell as Administrator.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-00-000170-disable-autoplay
+         cd C:\path\to\WN11-00-000170-disable-smbv1-client
     3. Run the script:
          .\remediation.ps1
 
@@ -39,30 +40,37 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-00-000170 - Disable AutoPlay ==="
-
-$regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"
-$regName = "NoDriveTypeAutoRun"
-$desiredValue = 255
+Write-Host "=== Remediation: WN11-00-000170 - Disable SMBv1 Client ==="
 
 try {
-    New-Item -Path $regPath -Force | Out-Null
+    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\mrxsmb10"
+    $regName = "Start"
+    $desiredValue = 4   # Disabled
 
-    # Disable AutoRun/AutoPlay on all drive types (255)
-    New-ItemProperty -Path $regPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    # Ensure registry path exists
+    if (-not (Test-Path $regPath)) {
+        Write-Error "SMBv1 client driver registry path not found."
+        exit 2
+    }
 
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
+    # Set registry value
+    Set-ItemProperty -Path $regPath -Name $regName -Value $desiredValue
+
+    # Verify configuration
+    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName).$regName
     Write-Host "Configured $regPath\$regName = $currentValue"
 
     if ($currentValue -eq $desiredValue) {
-        Write-Host "SUCCESS: AutoPlay/AutoRun is disabled (NoDriveTypeAutoRun=$desiredValue)."
+        Write-Host "SUCCESS: SMBv1 client protocol has been disabled."
+        Write-Host "NOTE: A system reboot is required for this change to take effect."
         exit 0
-    } else {
-        Write-Error "FAILURE: Registry value does not match the expected configuration."
-        exit 2
+    }
+    else {
+        Write-Error "FAILURE: SMBv1 client registry value does not match expected configuration."
+        exit 3
     }
 }
 catch {
     Write-Error "An error occurred: $($_.Exception.Message)"
-    exit 3
+    exit 4
 }
