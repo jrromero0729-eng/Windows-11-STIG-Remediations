@@ -1,9 +1,8 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-CC-000039 (V-253336) requires the "Run as different user"
-    option to be removed from Windows context menus.
-    This remediation enforces the setting using the corresponding policy-based
-    registry configuration evaluated by Tenable.
+    DISA STIG WN11-CC-000039 requires 'Run as different user' to be removed from context menus.
+    This remediation enforces the policy by configuring the registry-based policy setting to hide
+    the "Run as different user" option.
 
 .NOTES
     Author          : Albert Romero
@@ -12,10 +11,6 @@
     Version         : 1.0
     CVEs            : N/A
     Plugin IDs      : N/A (Tenable Audit STIG ID: WN11-CC-000039)
-
-    This policy is normally configured using the MS Security Guide ADMX templates
-    (SecGuide.admx/adml). This script directly configures the effective registry
-    setting used by the policy.
 
 .TESTED ON
     Date(s) Tested  : 2025-12-27
@@ -45,14 +40,16 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-CC-000039 - Remove 'Run as different user' ==="
-
-# Policy registry location
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"
-$regName = "DisableRunAsDifferentUser"
-$desiredValue = 1
+Write-Host "=== Remediation: WN11-CC-000039 - Remove 'Run as different user' from context menus ==="
 
 try {
+    # Policy-based registry configuration
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"
+    $regName = "ShowRunAsDifferentUserInStart"
+
+    # Setting to 0 hides/removes "Run as different user" from context menus
+    $desiredValue = 0
+
     # Ensure registry path exists
     New-Item -Path $regPath -Force | Out-Null
 
@@ -64,8 +61,8 @@ try {
     Write-Host "Configured $regPath\$regName = $currentValue"
 
     if ($currentValue -eq $desiredValue) {
-        Write-Host "SUCCESS: 'Run as different user' has been removed from context menus."
-        Write-Host "NOTE: A sign-out or reboot may be required for UI changes to take effect."
+        Write-Host "SUCCESS: 'Run as different user' has been removed (policy enforced)."
+        Write-Host "NOTE: A reboot or 'gpupdate /force' may be required for full UI/audit validation."
         exit 0
     } else {
         Write-Error "FAILURE: Registry value does not match the expected configuration."
