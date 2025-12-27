@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-AC-000010 (V-253298).
-    Confirms the account lockout threshold is set to 10 or fewer invalid logon attempts.
+    DISA STIG WN11-AC-000010 requires the number of allowed bad logon attempts
+    (Account lockout threshold) to be configured to three or less.
+    This verification checks the current Account lockout threshold value.
 
 .NOTES
     Author          : Albert Romero
@@ -32,29 +33,22 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-AC-000010 - Account Lockout Threshold ==="
-
-$maxAllowedThreshold = 10
+Write-Host "=== Verification: WN11-AC-000010 - Account Lockout Threshold (<= 3) ==="
 
 try {
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Lockout threshold" -SimpleMatch
+    $output = net accounts
+    $line = $output | Select-String -Pattern "Lockout threshold" -ErrorAction Stop
 
-    if (-not $policyLine) {
-        Write-Host "FAIL: Could not locate account lockout threshold policy."
-        exit 1
-    }
+    $currentValue = [int]([regex]::Match($line.Line, "\d+").Value)
 
-    Write-Host "Current policy:"
-    Write-Host $policyLine
+    Write-Host "Current lockout threshold: $currentValue"
+    Write-Host "Expected: 1 to 3 (0 is NOT acceptable)"
 
-    $currentValue = [int](([string]$policyLine).Split(':')[-1].Trim())
-
-    if ($currentValue -le $maxAllowedThreshold -and $currentValue -gt 0) {
-        Write-Host "PASS: Account lockout threshold is $currentValue (compliant)."
+    if ($currentValue -ge 1 -and $currentValue -le 3) {
+        Write-Host "PASS: Account lockout threshold meets STIG requirements."
         exit 0
     } else {
-        Write-Host "FAIL: Account lockout threshold is $currentValue (expected 1–$maxAllowedThreshold)."
+        Write-Host "FAIL: Account lockout threshold does not meet STIG requirements."
         exit 1
     }
 }
