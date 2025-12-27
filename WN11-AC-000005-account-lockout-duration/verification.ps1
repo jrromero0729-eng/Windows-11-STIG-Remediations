@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-AC-000005 (V-253297).
-    Confirms the account lockout duration meets or exceeds 15 minutes.
+    DISA STIG WN11-AC-000005 requires the Windows 11 account lockout duration to be configured to 15 minutes or greater.
+    This verification checks the local Account Lockout Policy "Account lockout duration" is >= 15 minutes or equals 0.
 
 .NOTES
     Author          : Albert Romero
@@ -32,30 +32,23 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-AC-000005 - Account Lockout Duration ==="
-
-$expectedDuration = 15
+Write-Host "=== Verification: WN11-AC-000005 - Account Lockout Duration (>= 15 minutes) ==="
 
 try {
-    $output = (cmd /c "net accounts") -join "`n"
-    $policyLine = $output | Select-String -Pattern "Lockout duration" -SimpleMatch
+    $output = net accounts
+    $line = $output | Select-String -Pattern "Lockout duration" -ErrorAction Stop
 
-    if (-not $policyLine) {
-        Write-Host "FAIL: Could not locate account lockout duration policy."
-        exit 1
-    }
+    # Extract the first number from the line (minutes)
+    $minutes = [int]([regex]::Match($line.Line, "\d+").Value)
 
-    Write-Host "Current policy:"
-    Write-Host $policyLine
+    Write-Host "Current lockout duration (minutes): $minutes"
+    Write-Host "Expected: >= 15 minutes OR 0 (admin unlock required)"
 
-    # Extract numeric value
-    $currentValue = [int](([string]$policyLine).Split(':')[-1].Trim())
-
-    if ($currentValue -ge $expectedDuration) {
-        Write-Host "PASS: Account lockout duration is $currentValue minutes (meets/exceeds $expectedDuration)."
+    if ($minutes -ge 15 -or $minutes -eq 0) {
+        Write-Host "PASS: Account lockout duration meets STIG requirements."
         exit 0
     } else {
-        Write-Host "FAIL: Account lockout duration is $currentValue minutes (expected >= $expectedDuration)."
+        Write-Host "FAIL: Account lockout duration does not meet STIG requirements."
         exit 1
     }
 }
