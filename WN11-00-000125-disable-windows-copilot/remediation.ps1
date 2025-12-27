@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-00-000125 requires Windows Copilot to be disabled.
-    This remediation enforces the policy setting by configuring the appropriate HKLM policy registry key.
+    DISA STIG WN11-00-000125 requires Copilot in Windows to be disabled for Windows 11.
+    This remediation enforces the policy "Turn off Windows Copilot" by setting the required policy registry value.
 
 .NOTES
     Author          : Albert Romero
@@ -41,29 +41,37 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 Write-Host "=== Remediation: WN11-00-000125 - Disable Windows Copilot ==="
 
-# Policy-based registry location for Windows Copilot
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
-$regName = "TurnOffWindowsCopilot"
-$desiredValue = 1
-
 try {
-    # Ensure key exists
-    New-Item -Path $regPath -Force | Out-Null
+    # Policy value expected by Tenable (Enabled = 1)
+    $regName = "TurnOffWindowsCopilot"
+    $desiredValue = 1
 
-    # Set policy value
-    New-ItemProperty -Path $regPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    # User policy path (matches User Configuration)
+    $hkcuPath = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+    # Machine policy path (covers Tenable implementations that evaluate HKLM)
+    $hklmPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
 
-    # Verify after setting
-    $current = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
+    # Ensure registry paths exist
+    New-Item -Path $hkcuPath -Force | Out-Null
+    New-Item -Path $hklmPath -Force | Out-Null
 
-    Write-Host "Configured $regPath\$regName = $current"
+    # Set policy values
+    New-ItemProperty -Path $hkcuPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    New-ItemProperty -Path $hklmPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
 
-    if ($current -eq $desiredValue) {
-        Write-Host "SUCCESS: Windows Copilot policy is set to disabled."
-        Write-Host "NOTE: You may need to sign out/in or reboot for UI changes. If Tenable still fails, reboot and re-scan."
+    # Verify configuration
+    $currentHKCU = (Get-ItemProperty -Path $hkcuPath -Name $regName -ErrorAction Stop).$regName
+    $currentHKLM = (Get-ItemProperty -Path $hklmPath -Name $regName -ErrorAction Stop).$regName
+
+    Write-Host "Configured $hkcuPath\$regName = $currentHKCU"
+    Write-Host "Configured $hklmPath\$regName = $currentHKLM"
+
+    if ($currentHKCU -eq $desiredValue -and $currentHKLM -eq $desiredValue) {
+        Write-Host "SUCCESS: Windows Copilot is disabled via policy (TurnOffWindowsCopilot = 1)."
+        Write-Host "NOTE: A sign-out/sign-in or reboot may be required for the UI to reflect changes and for audit validation."
         exit 0
     } else {
-        Write-Error "FAILURE: Registry value did not match expected state."
+        Write-Error "FAILURE: One or more registry values do not match the expected configuration."
         exit 2
     }
 }
