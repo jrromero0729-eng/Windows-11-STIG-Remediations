@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-00-000135.
-    Confirms policy is configured to require BitLocker encryption on removable drives before write access.
+    Verifies DISA STIG WN11-00-000135 compliance by confirming Windows Defender
+    Firewall is enabled for all network profiles.
 
 .NOTES
     Author          : Albert Romero
@@ -18,9 +18,9 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Run PowerShell (Administrator recommended).
+    1. Run PowerShell.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-00-000135-bitlocker-removable-drives
+         cd C:\path\to\WN11-00-000135-enable-firewall
     3. Run the script:
          .\verification.ps1
 
@@ -32,28 +32,26 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-00-000135 - BitLocker Removable Data Drives Policy ==="
-
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\FVE"
-$regName = "RDVRequireEncryptionForWriteAccess"
-$expectedValue = 1
+Write-Host "=== Verification: WN11-00-000135 - Windows Defender Firewall Status ==="
 
 try {
-    if (-not (Test-Path $regPath)) {
-        Write-Host "FAIL: Registry path not found: $regPath"
+    $profiles = Get-NetFirewallProfile
+    $nonCompliant = @()
+
+    foreach ($profile in $profiles) {
+        Write-Host "$($profile.Name) Profile - Enabled: $($profile.Enabled)"
+        if ($profile.Enabled -ne $true) {
+            $nonCompliant += $profile.Name
+        }
+    }
+
+    if ($nonCompliant.Count -gt 0) {
+        Write-Host "FAIL: Firewall is disabled for the following profile(s): $($nonCompliant -join ', ')"
         exit 1
     }
 
-    $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Found $regName = $currentValue"
-
-    if ($currentValue -eq $expectedValue) {
-        Write-Host "PASS: Policy requires BitLocker encryption for write access on removable drives."
-        exit 0
-    } else {
-        Write-Host "FAIL: Expected $regName = $expectedValue but found $currentValue"
-        exit 1
-    }
+    Write-Host "PASS: Windows Defender Firewall is enabled for all profiles."
+    exit 0
 }
 catch {
     Write-Error "An error occurred: $($_.Exception.Message)"
