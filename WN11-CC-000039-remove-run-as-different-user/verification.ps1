@@ -1,8 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-CC-000039 (V-253336).
-    Confirms the "Run as different user" option is removed from Windows
-    context menus via policy-based registry configuration.
+    DISA STIG WN11-CC-000039 requires 'Run as different user' to be removed from context menus.
+    This verification checks the policy registry value is set to remove/hide the option.
 
 .NOTES
     Author          : Albert Romero
@@ -33,26 +32,27 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-CC-000039 - Remove 'Run as different user' ==="
-
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"
-$regName = "DisableRunAsDifferentUser"
-$expectedValue = 1
+Write-Host "=== Verification: WN11-CC-000039 - Remove 'Run as different user' from context menus ==="
 
 try {
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"
+    $regName = "ShowRunAsDifferentUserInStart"
+    $expectedValue = 0
+
     if (-not (Test-Path $regPath)) {
-        Write-Host "FAIL: Registry path not found: $regPath"
+        Write-Host "FAIL: Policy registry path not found: $regPath"
         exit 1
     }
 
     $currentValue = (Get-ItemProperty -Path $regPath -Name $regName -ErrorAction Stop).$regName
-    Write-Host "Found $regName = $currentValue"
+    Write-Host "Found $regPath\$regName = $currentValue"
+    Write-Host "Expected $regName = $expectedValue (0 = remove/hide 'Run as different user')"
 
     if ($currentValue -eq $expectedValue) {
-        Write-Host "PASS: 'Run as different user' is removed from context menus."
+        Write-Host "PASS: Policy is set correctly to remove/hide 'Run as different user'."
         exit 0
     } else {
-        Write-Host "FAIL: Expected $regName = $expectedValue but found $currentValue"
+        Write-Host "FAIL: Policy value is not set correctly."
         exit 1
     }
 }
