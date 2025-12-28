@@ -1,8 +1,7 @@
 <#
 .SYNOPSIS
-    Verification script for DISA STIG WN11-CC-000315.
-    Confirms the Windows Installer policy "Always install with elevated privileges" is disabled
-    by checking both machine and user policy registry settings.
+    Verifies DISA STIG WN11-CC-000315 compliance by confirming the Windows Installer
+    policy 'Always install with elevated privileges' is disabled.
 
 .NOTES
     Author          : Albert Romero
@@ -19,9 +18,9 @@
     PowerShell Ver. : 5.1
 
 .USAGE
-    1. Run PowerShell (Administrator recommended).
+    1. Run PowerShell.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-CC-000315-disable-always-install-elevated
+         cd C:\path\to\WN11-CC-000315-disable-alwaysinstall-elevated
     3. Run the script:
          .\verification.ps1
 
@@ -33,35 +32,36 @@
 # Main Script
 # -------------------------
 
-Write-Host "=== Verification: WN11-CC-000315 - Disable 'Always install with elevated privileges' ==="
-
-$machineRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
-$userRegPath    = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
-$regName        = "AlwaysInstallElevated"
-$expectedValue  = 0
+Write-Host "=== Verification: WN11-CC-000315 - AlwaysInstallElevated Disabled ==="
 
 try {
-    if (-not (Test-Path $machineRegPath)) {
-        Write-Host "FAIL: Registry path not found: $machineRegPath"
-        exit 1
+    $expectedValue = 0
+    $regName = "AlwaysInstallElevated"
+
+    $regPathHKLM = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+    $regPathHKCU = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+
+    $hklmValue = $null
+    $hkcuValue = $null
+
+    if (Test-Path $regPathHKLM) {
+        try { $hklmValue = (Get-ItemProperty -Path $regPathHKLM -Name $regName -ErrorAction Stop).$regName } catch { $hklmValue = $null }
     }
 
-    if (-not (Test-Path $userRegPath)) {
-        Write-Host "FAIL: Registry path not found: $userRegPath"
-        exit 1
+    if (Test-Path $regPathHKCU) {
+        try { $hkcuValue = (Get-ItemProperty -Path $regPathHKCU -Name $regName -ErrorAction Stop).$regName } catch { $hkcuValue = $null }
     }
 
-    $currentMachine = (Get-ItemProperty -Path $machineRegPath -Name $regName -ErrorAction Stop).$regName
-    $currentUser    = (Get-ItemProperty -Path $userRegPath    -Name $regName -ErrorAction Stop).$regName
+    Write-Host "HKLM $regPathHKLM\$regName = $hklmValue"
+    Write-Host "HKCU $regPathHKCU\$regName = $hkcuValue"
+    Write-Host "Expected value = $expectedValue (Disabled)"
 
-    Write-Host "Found $machineRegPath\$regName = $currentMachine"
-    Write-Host "Found $userRegPath\$regName    = $currentUser"
-
-    if ($currentMachine -eq $expectedValue -and $currentUser -eq $expectedValue) {
-        Write-Host "PASS: 'Always install with elevated privileges' is disabled for both machine and user policy."
+    if ($hklmValue -eq $expectedValue -and $hkcuValue -eq $expectedValue) {
+        Write-Host "PASS: WN11-CC-000315 is compliant. AlwaysInstallElevated is disabled."
         exit 0
-    } else {
-        Write-Host "FAIL: Expected $regName = $expectedValue for both machine and user policy."
+    }
+    else {
+        Write-Host "FAIL: WN11-CC-000315 is NOT compliant. AlwaysInstallElevated must be set to 0."
         exit 1
     }
 }
