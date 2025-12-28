@@ -1,7 +1,9 @@
 <#
 .SYNOPSIS
-    DISA STIG WN11-CC-000315 requires the Windows Installer feature "Always install with elevated privileges" to be disabled.
-    This remediation disables the policy by configuring both machine and user policy registry settings.
+    DISA STIG WN11-CC-000315 requires the Windows Installer feature
+    'Always install with elevated privileges' to be disabled.
+    This remediation enforces the setting by configuring the required
+    policy-based registry values.
 
 .NOTES
     Author          : Albert Romero
@@ -20,7 +22,7 @@
 .USAGE
     1. Run PowerShell as Administrator.
     2. Navigate to the script's folder:
-         cd C:\path\to\WN11-CC-000315-disable-always-install-elevated
+         cd C:\path\to\WN11-CC-000315-disable-alwaysinstall-elevated
     3. Run the script:
          .\remediation.ps1
 
@@ -39,35 +41,40 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-Write-Host "=== Remediation: WN11-CC-000315 - Disable 'Always install with elevated privileges' ==="
-
-# Policy registry paths
-$machineRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
-$userRegPath    = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
-$regName        = "AlwaysInstallElevated"
-$desiredValue   = 0
+Write-Host "=== Remediation: WN11-CC-000315 - Disable Always Install with Elevated Privileges ==="
 
 try {
-    # Ensure registry paths exist
-    New-Item -Path $machineRegPath -Force | Out-Null
-    New-Item -Path $userRegPath -Force | Out-Null
+    $desiredValue = 0
 
-    # Set policy values (0 = Disabled)
-    New-ItemProperty -Path $machineRegPath -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
-    New-ItemProperty -Path $userRegPath    -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    # Computer policy path (HKLM)
+    $regPathHKLM = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+    $regName = "AlwaysInstallElevated"
+
+    # User policy path (HKCU) - included for defense-in-depth and audit consistency
+    $regPathHKCU = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+
+    # Ensure registry paths exist
+    New-Item -Path $regPathHKLM -Force | Out-Null
+    New-Item -Path $regPathHKCU -Force | Out-Null
+
+    # Set policy values to Disabled (0)
+    New-ItemProperty -Path $regPathHKLM -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
+    New-ItemProperty -Path $regPathHKCU -Name $regName -PropertyType DWord -Value $desiredValue -Force | Out-Null
 
     # Verify configuration
-    $currentMachine = (Get-ItemProperty -Path $machineRegPath -Name $regName -ErrorAction Stop).$regName
-    $currentUser    = (Get-ItemProperty -Path $userRegPath    -Name $regName -ErrorAction Stop).$regName
+    $currentHKLM = (Get-ItemProperty -Path $regPathHKLM -Name $regName -ErrorAction Stop).$regName
+    $currentHKCU = (Get-ItemProperty -Path $regPathHKCU -Name $regName -ErrorAction Stop).$regName
 
-    Write-Host "Configured $machineRegPath\$regName = $currentMachine"
-    Write-Host "Configured $userRegPath\$regName    = $currentUser"
+    Write-Host "Configured $regPathHKLM\$regName = $currentHKLM"
+    Write-Host "Configured $regPathHKCU\$regName = $currentHKCU"
 
-    if ($currentMachine -eq $desiredValue -and $currentUser -eq $desiredValue) {
-        Write-Host "SUCCESS: 'Always install with elevated privileges' is disabled for both machine and user policy."
+    if ($currentHKLM -eq $desiredValue -and $currentHKCU -eq $desiredValue) {
+        Write-Host "SUCCESS: 'Always install with elevated privileges' is disabled (policy value = 0)."
+        Write-Host "NOTE: A reboot or Group Policy refresh may be required for audit validation."
         exit 0
-    } else {
-        Write-Error "FAILURE: One or more registry values do not match the expected configuration."
+    }
+    else {
+        Write-Error "FAILURE: One or more registry values do not match the expected configuration (0)."
         exit 2
     }
 }
