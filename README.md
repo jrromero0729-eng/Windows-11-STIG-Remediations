@@ -51,11 +51,11 @@ Each STIG is organized into its own folder and includes:
 11. **WN11-SO-000280** – Minimum Password Age (≥1 day)  
    - Folder: [`WN11-SO-000280-minimum-password-age/`](./WN11-SO-000280-minimum-password-age/)
 
-12. **WN11-00-000135** – Require BitLocker on Removable Data Drives (policy enforcement)  
-   - Folder: [`WN11-00-000135-bitlocker-removable-drives/`](./WN11-00-000135-bitlocker-removable-drives/)
+12. **WN11-00-000170** – Disable SMB v1 Protocol 
+   - Folder: [`WN11-00-000170-disable-smbv1-client/`](./WN11-00-000170-disable-smbv1-client/)
 
-13. **WN11-00-000170** – Disable AutoPlay/AutoRun  
-   - Folder: [`WN11-00-000170-disable-autoplay/`](./WN11-00-000170-disable-autoplay/)
+13. **WN11-00-000135** – Enable Host Based Firewall
+   - Folder: [`WN11-00-000135-enable-host-based-firewall/`](./WN11-00-000135-enable-host-based-firewall/)
 
 14. **WN11-CC-000315** – Disable “Always install with elevated privileges”  
    - Folder: [`WN11-CC-000315-disable-always-install-elevated/`](./WN11-CC-000315-disable-always-install-elevated/)
