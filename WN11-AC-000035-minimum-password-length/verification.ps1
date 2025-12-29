@@ -12,7 +12,7 @@
     Plugin IDs      : N/A (Tenable Audit STIG ID: WN11-AC-000035)
 
 .TESTED ON
-    Date(s) Tested  : 2025-11-08, 2025-12-27
+    Date(s) Tested  : 2025-11-08, 2025-12-28
     Tested By       : Albert Romero
     Systems Tested  : Windows 11
     PowerShell Ver. : 5.1
