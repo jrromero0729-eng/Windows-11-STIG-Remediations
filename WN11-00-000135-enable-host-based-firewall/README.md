@@ -27,7 +27,8 @@ The script verifies firewall status and enables it if it is found to be disabled
 - `verification.ps1` – Verifies the firewall is enabled and compliant with the STIG
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
+.\verification.ps1
