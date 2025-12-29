@@ -28,7 +28,7 @@ A system reboot is required for the change to fully take effect.
 - `verification.ps1` – Verifies the SMBv1 client driver is disabled
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
