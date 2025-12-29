@@ -23,8 +23,9 @@ This remediation enables Microsoft Defender SmartScreen using policy-based regis
 - `verification.ps1` – Verifies Microsoft Defender SmartScreen is enabled and compliant  
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
+.\verification.ps1
 
