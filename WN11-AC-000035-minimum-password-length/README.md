@@ -1,17 +1,35 @@
 # WN11-AC-000035 – Enforce Minimum Password Length
 
-This folder contains remediation and verification scripts for DISA STIG WN11-AC-000035 on Windows 11.
+## STIG Information
+- **STIG ID:** WN11-AC-000035  
+- **Title:** The minimum password length must be configured to at least 14 characters  
+- **Severity:** CAT II  
+- **Platform:** Windows 11  
+- **Benchmark:** DISA Microsoft Windows 11 STIG  
 
-## Summary
-Implements DISA STIG WN11-AC-000035 (V-253303) by enforcing a minimum password length
-of 14 characters for local accounts to reduce the risk of password-based attacks.
+## Description
+Enforcing a strong minimum password length helps protect systems against brute-force
+and credential-guessing attacks by increasing the complexity and entropy of user
+passwords. Short passwords are more susceptible to compromise through automated
+attack techniques.
 
-## STIG Details
-- STIG ID: WN11-AC-000035
-- Vulnerability ID: V-253303
-- Required Minimum Length: 14 characters
-- Policy Area: Account Policies → Password Policy
+## STIG Requirement
+The minimum password length must be configured to **at least 14 characters**.
 
-## Included Files
-- remediation.ps1
-- verification.ps1
+Compliance is achieved by configuring the local password policy to enforce a minimum
+password length of 14 characters or greater.
+
+## Remediation Overview
+This remediation configures the local password policy to enforce a minimum password
+length of 14 characters, ensuring all local user accounts meet DISA STIG requirements.
+
+## Files Included
+- `remediation.ps1` – Configures the minimum password length to at least 14 characters  
+- `verification.ps1` – Verifies the minimum password length is compliant  
+
+## Usage
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
+
+```powershell
+.\remediation.ps1
+.\verification.ps1
