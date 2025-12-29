@@ -5,14 +5,14 @@
 
 .NOTES
     Author          : Albert Romero
-    Date Created    : 2025-12-27
-    Last Modified   : 2025-12-27
+    Date Created    : 2025-09-26
+    Last Modified   : 2025-12-29
     Version         : 1.0
     CVEs            : N/A
     Plugin IDs      : N/A (Tenable Audit STIG ID: WN11-00-000125)
 
 .TESTED ON
-    Date(s) Tested  : 2025-12-27
+    Date(s) Tested  : 2025-09-27, 2025-12-26
     Tested By       : Albert Romero
     Systems Tested  : Windows 11
     PowerShell Ver. : 5.1
