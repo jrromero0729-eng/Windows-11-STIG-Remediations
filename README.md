@@ -45,9 +45,6 @@ Each STIG is organized into its own folder and includes:
 10. **WN11-CC-000210** – Enable Microsoft Defender SmartScreen for Explorer  
    - Folder: [`WN11-CC-000210-enable-smartscreen-for-explorer/`](./WN11-CC-000210-enable-smartscreen-for-explorer/)
 
----
-
-### Additional STIGs (Extended Set)
 11. **WN11-SO-000280** – Minimum Password Age (≥1 day)  
    - Folder: [`WN11-SO-000280-minimum-password-age/`](./WN11-SO-000280-minimum-password-age/)
 
@@ -70,4 +67,7 @@ Each STIG is organized into its own folder and includes:
 3. Run:
    ```powershell
    .\remediation.ps1
+4. Run:
+   ```powershell
+   .\verification.ps1
 
