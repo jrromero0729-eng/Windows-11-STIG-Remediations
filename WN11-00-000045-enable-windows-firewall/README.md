@@ -32,5 +32,7 @@ Run the remediation script with administrative privileges:
 
 ```powershell
 .\remediation.ps1
+
+After the remediation, run the verification script.
 .\verification.ps1
 
