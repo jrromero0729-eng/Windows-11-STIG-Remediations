@@ -25,7 +25,8 @@ This remediation enumerates enabled local user accounts and removes the **Passwo
 - `verification.ps1` – Verifies local user accounts are compliant with password expiration requirements  
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
+.\verification.ps1
