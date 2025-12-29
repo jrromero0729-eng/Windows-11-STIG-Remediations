@@ -28,11 +28,9 @@ This remediation ensures Windows Defender Firewall is enabled on the system by e
 - `verification.ps1` – Verifies Windows Defender Firewall is enabled and compliant  
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
-
-After the remediation, run the verification script.
 .\verification.ps1
 
