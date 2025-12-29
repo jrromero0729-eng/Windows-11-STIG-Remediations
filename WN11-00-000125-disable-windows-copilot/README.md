@@ -28,7 +28,8 @@ ensuring the feature is turned off at the system level and cannot be re-enabled 
 - `verification.ps1` – Verifies Windows Copilot is disabled and compliant  
 
 ## Usage
-Run the remediation script with administrative privileges:
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
 
 ```powershell
 .\remediation.ps1
+.\verification.ps1
