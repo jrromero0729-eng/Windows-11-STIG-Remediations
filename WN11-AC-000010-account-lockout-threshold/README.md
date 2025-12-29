@@ -1,17 +1,36 @@
 # WN11-AC-000010 – Account Lockout Threshold
 
-This folder contains remediation and verification scripts for DISA STIG WN11-AC-000010 on Windows 11.
+## STIG Information
+- **STIG ID:** WN11-AC-000010  
+- **Title:** The account lockout threshold must be configured to 10 or fewer invalid logon attempts  
+- **Severity:** CAT II  
+- **Platform:** Windows 11  
+- **Benchmark:** DISA Microsoft Windows 11 STIG  
 
-## Summary
-Implements DISA STIG WN11-AC-000010 (V-253298) by enforcing an account lockout threshold
-of 10 or fewer invalid logon attempts to mitigate brute-force attacks.
+## Description
+Configuring an appropriate account lockout threshold helps mitigate brute-force and
+credential-guessing attacks by limiting the number of consecutive failed logon attempts
+before an account is locked. Setting the threshold too high increases the likelihood of
+successful password attacks.
 
-## STIG Details
-- STIG ID: WN11-AC-000010
-- Vulnerability ID: V-253298
-- Required Threshold: ≤ 10 invalid logon attempts
-- Policy Area: Account Policies → Account Lockout Policy
+## STIG Requirement
+The account lockout threshold must be configured to **10 or fewer invalid logon attempts**.
 
-## Included Files
-- remediation.ps1
-- verification.ps1
+Compliance is achieved by configuring the account lockout policy to enforce a maximum
+of 10 failed logon attempts before an account is locked.
+
+## Remediation Overview
+This remediation configures the local account lockout threshold to meet DISA STIG
+requirements, ensuring accounts are locked after no more than 10 consecutive failed
+authentication attempts.
+
+## Files Included
+- `remediation.ps1` – Configures the account lockout threshold to 10 or fewer attempts  
+- `verification.ps1` – Verifies the account lockout threshold is compliant  
+
+## Usage
+Run the remediation script with administrative privileges and then run the verification script to confirm remediation was successful:
+
+```powershell
+.\remediation.ps1
+.\verification.ps1
